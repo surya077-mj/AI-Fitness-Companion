@@ -7,9 +7,28 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import classification_report
 
+# Define GitHub Raw URL
+GITHUB_RAW_URL = "https://raw.githubusercontent.com/surya077-mj/AI-Fitness-Companion/main/fitness_recommender/"
+
+# Function to load CSV from GitHub
+@st.cache_data
+def load_csv(filename):
+    try:
+        url = GITHUB_RAW_URL + filename
+        df = pd.read_csv(url)
+        return df
+    except Exception as e:
+        st.error(f"Error loading {filename}: {e}")
+        return None
+
 # Load datasets
-gym_data = pd.read_csv("D:/ml/fitness_recommender/gym_members_exercise_tracking.csv")
-scaled_calories = pd.read_csv("D:/ml/fitness_recommender/scaled_calories.csv")
+gym_data = load_csv("gym_members_exercise_tracking.csv")
+scaled_calories = load_csv("scaled_calories.csv")
+
+# Ensure data is loaded
+if gym_data is None or scaled_calories is None:
+    st.error("❌ Failed to load datasets. Check the GitHub repository or network connection.")
+    st.stop()
 
 # Ensure necessary columns exist
 def ensure_column(df, column, default_value):
@@ -49,7 +68,7 @@ knn.fit(X_train, y_train)
 
 # Evaluate model
 y_pred = knn.predict(X_test)
-print(classification_report(y_test, y_pred))
+classification_report_text = classification_report(y_test, y_pred)
 
 # Streamlit UI
 st.set_page_config(page_title="AI Workout Recommender", layout="wide")
@@ -99,7 +118,7 @@ if st.sidebar.button("Get Workout Recommendation"):
     ]
     st.write(f"💪 Motivation: {np.random.choice(motivation_quotes)}")
 
-    # Calories burned progress chart - smaller and clearer
+    # Calories burned progress chart
     st.write("📊 Weekly Calorie Burn Progress")
     progress_df = pd.DataFrame({"Day": [f"Day {i}" for i in range(1, 8)], "Calories": np.random.randint(200, 600, 7)})
     fig, ax = plt.subplots(figsize=(6, 3))
@@ -109,3 +128,7 @@ if st.sidebar.button("Get Workout Recommendation"):
     ax.set_title("Calories Burned Over the Week")
     plt.xticks(rotation=45)
     st.pyplot(fig)
+
+# Show classification report for testing
+st.subheader("🔎 Model Evaluation")
+st.text(classification_report_text)
